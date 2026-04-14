@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>达人池管理系统</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f0f0f;--surface:#181818;--surface2:#222222;
+    --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+    --text:#f0f0f0;--muted:#888;--faint:#444;
+    --green:#4ade80;--green-bg:rgba(74,222,128,0.1);
+    --blue:#60a5fa;--blue-bg:rgba(96,165,250,0.1);
+    --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.1);
+    --red:#f87171;--red-bg:rgba(248,113,113,0.1);
+    --accent:#e0ff4f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
+  .app{display:flex;height:100vh;overflow:hidden;}
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+  .main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+  .logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .logo-mark{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.1em;margin-bottom:4px;}
+  .logo-title{font-size:15px;font-weight:500;}
+  .nav{padding:12px 0;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;color:var(--muted);font-size:13px;transition:all 0.15s;border-left:2px solid transparent;}
+  .nav-item:hover{color:var(--text);background:var(--surface2);}
+  .nav-item.active{color:var(--text);border-left-color:var(--accent);background:rgba(224,255,79,0.05);}
+  .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex-shrink:0;}
+  .nav-item.active .nav-dot{background:var(--accent);}
+  .sidebar-stats{padding:16px 20px;border-top:1px solid var(--border);}
+  .stat-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;}
+  .stat-label{color:var(--muted);}
+  .stat-val{font-family:'DM Mono',monospace;font-weight:500;}
+  .header{padding:20px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .header-title{font-size:18px;font-weight:500;}
+  .header-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .btn{padding:8px 16px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+  .btn:hover{background:var(--surface2);}
+  .btn-primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:500;}
+  .btn-primary:hover{background:#d4f040;border-color:#d4f040;}
+  .btn-danger{color:var(--red);border-color:rgba(248,113,113,0.3);}
+  .btn-danger:hover{background:var(--red-bg);}
+  .filter-bar{padding:14px 28px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;}
+  .filter-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;}
+  .filter-chip.on{color:var(--text);border-color:var(--border2);background:var(--surface2);}
+  .filter-chip.grade-A.on{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+  .filter-chip.grade-B.on{background:var(--blue-bg);border-color:var(--blue);color:var(--blue);}
+  .filter-chip.grade-C.on{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}
+  .filter-chip.grade-X.on{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+  .search-input{margin-left:auto;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;width:180px;outline:none;}
+  .search-input:focus{border-color:var(--border2);}
+  .search-input::placeholder{color:var(--faint);}
+  .table-wrap{flex:1;overflow-y:auto;padding:0 28px 28px;}
+  .table-wrap::-webkit-scrollbar{width:4px;}
+  .table-wrap::-webkit-scrollbar-thumb{background:var(--faint);border-radius:2px;}
+  table{width:100%;border-collapse:collapse;margin-top:16px;}
+  thead th{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0.06em;text-transform:uppercase;padding:0 12px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;cursor:pointer;}
+  tbody tr:hover{background:var(--surface2);}
+  td{padding:13px 12px;font-size:13px;vertical-align:middle;}
+  .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:500;white-space:nowrap;}
+  .badge-A{background:var(--green-bg);color:var(--green);}
+  .badge-B{background:var(--blue-bg);color:var(--blue);}
+  .badge-C{background:var(--amber-bg);color:var(--amber);}
+  .badge-X{background:var(--red-bg);color:var(--red);}
+  .funnel-badge{background:var(--surface2);color:var(--muted);font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--border);}
+  .loading-state,.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+  .loading-state{font-family:'DM Mono',monospace;font-size:13px;}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;padding:20px;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;}
+  .modal::-webkit-scrollbar{width:4px;}
+  .modal::-webkit-scrollbar-thumb{background:var(--faint);border-radius:2px;}
+  .modal-header{padding:24px 28px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .modal-title{font-size:16px;font-weight:500;}
+  .modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+  .modal-close:hover{color:var(--text);}
+  .modal-body{padding:24px 28px;}
+  .modal-footer{padding:16px 28px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+  .form-section{margin-bottom:24px;}
+  .form-section-title{font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .form-grid.cols3{grid-template-columns:1fr 1fr 1fr;}
+  .form-group{display:flex;flex-direction:column;gap:5px;}
+  .form-group.full{grid-column:1/-1;}
+  label{font-size:12px;color:var(--muted);}
+  input[type=text],input[type=url],input[type=number],select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border 0.15s;}
+  input:focus,select:focus,textarea:focus{border-color:var(--border2);}
+  select option{background:var(--surface2);}
+  textarea{resize:vertical;min-height:60px;}
+  .veto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .veto-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);cursor:pointer;}
+  .veto-item input{accent-color:var(--red);width:14px;height:14px;cursor:pointer;}
+  .veto-item label{font-size:12px;color:var(--muted);cursor:pointer;}
+  .score-field{margin-bottom:10px;}
+  .score-field-label{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;}
+  .score-field-label span{color:var(--faint);font-family:'DM Mono',monospace;}
+  .score-btns{display:flex;gap:4px;flex-wrap:wrap;}
+  .score-btn{padding:5px 10px;font-size:12px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.12s;}
+  .score-btn:hover{border-color:var(--border2);color:var(--text);}
+  .score-btn.active{background:rgba(224,255,79,0.12);border-color:var(--accent);color:var(--accent);}
+  .result-preview{background:var(--surface2);border-radius:8px;border:1px solid var(--border);padding:16px;margin-top:16px;display:flex;align-items:center;justify-content:space-between;}
+  .result-score{font-family:'DM Mono',monospace;font-size:28px;font-weight:500;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .detail-card{background:var(--surface2);border-radius:8px;border:1px solid var(--border);padding:14px;}
+  .detail-card-label{font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;}
+  .detail-card-val{font-size:14px;font-weight:500;}
+  .funnel-select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;width:100%;outline:none;}
+  .score-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .score-item{display:flex;justify-content:space-between;font-size:12px;padding:6px 10px;background:var(--bg);border-radius:5px;}
+  .score-item-label{color:var(--muted);}
+  .score-item-val{font-family:'DM Mono',monospace;font-weight:500;}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 18px;font-size:13px;z-index:200;opacity:0;transition:opacity 0.2s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  .toast.success{border-color:var(--green);color:var(--green);}
+  .toast.error{border-color:var(--red);color:var(--red);}
+  .sync-tag{font-size:11px;color:var(--faint);font-family:'DM Mono',monospace;margin-left:10px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">GAPASEA</div>
+      <div class="logo-title">达人池管理</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="switchView('pool')"><div class="nav-dot"></div>合作池总览</div>
+      <div class="nav-item" onclick="switchView('scoring')"><div class="nav-dot"></div>新增评分</div>
+    </nav>
+    <div class="sidebar-stats" id="sidebar-stats"><div class="stat-row"><span class="stat-label">加载中...</span></div></div>
+  </div>
+
+  <div class="main">
+    <div id="view-pool" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <div class="header">
+        <div>
+          <div class="header-title">合作池总览 <span class="sync-tag" id="sync-status"></span></div>
+          <div class="header-sub" id="pool-count">连接飞书中...</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="loadData()">刷新</button>
+          <button class="btn btn-primary" onclick="switchView('scoring')">+ 新增达人</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-chip on" onclick="setFilter(this,'all')">全部</button>
+        <button class="filter-chip grade-A" onclick="setFilter(this,'A')">A级 — 优先</button>
+        <button class="filter-chip grade-B" onclick="setFilter(this,'B')">B级 — 正常</button>
+        <button class="filter-chip grade-C" onclick="setFilter(this,'C')">C级 — 备选</button>
+        <button class="filter-chip grade-X" onclick="setFilter(this,'X')">否决</button>
+        <input class="search-input" id="search" placeholder="搜索达人名称..." oninput="renderTable()">
+      </div>
+      <div class="table-wrap">
+        <div id="loading-state" class="loading-state">正在从飞书加载数据...</div>
+        <table id="main-table" style="display:none">
+          <thead><tr><th>达人名称</th><th>城市</th><th>层级</th><th>判定</th><th>总分</th><th>场景</th><th>漏斗阶段</th><th>来源</th></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div id="empty-state" class="empty-state" style="display:none">
+          <div style="font-size:32px;margin-bottom:12px">○</div>
+          <div style="font-weight:500">池子还是空的</div>
+          <p style="margin-top:8px;font-size:13px">点击右上角「新增达人」开始建池</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-scoring" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div class="header">
+        <div><div class="header-title">新增达人评分</div><div class="header-sub">填写完成后自动计算判定级别</div></div>
+        <button class="btn" onclick="switchView('pool')">返回总览</button>
+      </div>
+      <div class="table-wrap">
+        <div class="form-section">
+          <div class="form-section-title">基础信息</div>
+          <div class="form-grid cols3">
+            <div class="form-group"><label>达人名称 *</label><input type="text" id="f-name" placeholder="如 morgan_aguirre"></div>
+            <div class="form-group"><label>INS链接</label><input type="url" id="f-ins" placeholder="https://instagram.com/..."></div>
+            <div class="form-group"><label>Strava链接</label><input type="url" id="f-strava" placeholder="https://strava.com/..."></div>
+            <div class="form-group"><label>城市</label>
+              <select id="f-city"><option value="">选择城市</option><option>Bay Area</option><option>LA</option><option>San Diego</option><option>Sacramento</option><option>其他加州</option><option>Utah</option><option>Colorado</option><option>其他美西</option><option>其他州</option></select>
+            </div>
+            <div class="form-group"><label>粉丝量</label><input type="number" id="f-followers" placeholder="如 8272"></div>
+            <div class="form-group"><label>层级</label>
+              <select id="f-tier"><option value="">选择层级</option><option>Nano (1k-10k)</option><option>Micro (10k-50k)</option><option>大Pro (100k+)</option></select>
+            </div>
+            <div class="form-group"><label>搜寻来源</label>
+              <select id="f-source"><option value="">选择来源</option><option>赛事搜寻法</option><option>Tag搜寻法</option><option>竞品Tag</option><option>Strava校验</option><option>FB校验</option><option>其他</option></select>
+            </div>
+            <div class="form-group"><label>运动场景</label>
+              <select id="f-sport"><option value="">选择运动</option><option>公路骑行</option><option>Gravel</option><option>MTB</option><option>Hiking</option><option>Running</option><option>Climbing</option><option>其他</option></select>
+            </div>
+            <div class="form-group"><label>关联达人</label><input type="text" id="f-network" placeholder="如 isaac.allred31"></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">第一层 — 一票否决</div>
+          <div class="veto-grid">
+            <div class="veto-item"><input type="checkbox" id="nv1" onchange="calcScore()"><label for="nv1">地区不符（非加州）</label></div>
+            <div class="veto-item"><input type="checkbox" id="nv2" onchange="calcScore()"><label for="nv2">账号停更（30天无帖）</label></div>
+            <div class="veto-item"><input type="checkbox" id="nv3" onchange="calcScore()"><label for="nv3">内容不垂直（骑行&lt;60%）</label></div>
+            <div class="veto-item"><input type="checkbox" id="nv4" onchange="calcScore()"><label for="nv4">假粉严重（评论全emoji）</label></div>
+            <div class="veto-item"><input type="checkbox" id="nv5" onchange="calcScore()"><label for="nv5">竞品独家合作</label></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">第二层 — 综合评分</div>
+          <div class="score-field"><div class="score-field-label">场景匹配 <span id="lbl-s1">0/3</span></div><div class="score-btns" id="sg1"><button class="score-btn active" data-v="0" onclick="setScore('sg1',0,'lbl-s1',3)">0</button><button class="score-btn" data-v="1" onclick="setScore('sg1',1,'lbl-s1',3)">1 — P2运动</button><button class="score-btn" data-v="2" onclick="setScore('sg1',2,'lbl-s1',3)">2 — MTB</button><button class="score-btn" data-v="3" onclick="setScore('sg1',3,'lbl-s1',3)">3 — 公路/Gravel</button></div></div>
+          <div class="score-field"><div class="score-field-label">内容类型 <span id="lbl-s2">0/3</span></div><div class="score-btns" id="sg2"><button class="score-btn active" data-v="0" onclick="setScore('sg2',0,'lbl-s2',3)">0</button><button class="score-btn" data-v="1" onclick="setScore('sg2',1,'lbl-s2',3)">1 — Solo骑行</button><button class="score-btn" data-v="2" onclick="setScore('sg2',2,'lbl-s2',3)">2 — 线路/生活</button><button class="score-btn" data-v="3" onclick="setScore('sg2',3,'lbl-s2',3)">3 — 团骑/装备/俱乐部</button></div></div>
+          <div class="score-field"><div class="score-field-label">组队信号 <span id="lbl-s3">0/3</span></div><div class="score-btns" id="sg3"><button class="score-btn active" data-v="0" onclick="setScore('sg3',0,'lbl-s3',3)">0</button><button class="score-btn" data-v="1" onclick="setScore('sg3',1,'lbl-s3',3)">1 — 几乎无</button><button class="score-btn" data-v="2" onclick="setScore('sg3',2,'lbl-s3',3)">2 — 偶有团骑</button><button class="score-btn" data-v="3" onclick="setScore('sg3',3,'lbl-s3',3)">3 — 3人以上频繁</button></div></div>
+          <div class="score-field"><div class="score-field-label">商业变现 <span id="lbl-s4">0/3</span></div><div class="score-btns" id="sg4"><button class="score-btn active" data-v="0" onclick="setScore('sg4',0,'lbl-s4',3)">0</button><button class="score-btn" data-v="1" onclick="setScore('sg4',1,'lbl-s4',3)">1 — 0-1条</button><button class="score-btn" data-v="2" onclick="setScore('sg4',2,'lbl-s4',3)">2 — 2-3条</button><button class="score-btn" data-v="3" onclick="setScore('sg4',3,'lbl-s4',3)">3 — 4条以上</button></div></div>
+          <div class="score-field"><div class="score-field-label">体量匹配 <span id="lbl-s5">0/2</span></div><div class="score-btns" id="sg5"><button class="score-btn active" data-v="0" onclick="setScore('sg5',0,'lbl-s5',2)">0</button><button class="score-btn" data-v="1" onclick="setScore('sg5',1,'lbl-s5',2)">1 — 大Pro</button><button class="score-btn" data-v="2" onclick="setScore('sg5',2,'lbl-s5',2)">2 — Micro/Nano</button></div></div>
+          <div class="score-field"><div class="score-field-label">眼镜出镜 <span id="lbl-s6">0/1</span></div><div class="score-btns" id="sg6"><button class="score-btn active" data-v="0" onclick="setScore('sg6',0,'lbl-s6',1)">0 — 否</button><button class="score-btn" data-v="1" onclick="setScore('sg6',1,'lbl-s6',1)">1 — 60%以上佩戴</button></div></div>
+          <div class="result-preview">
+            <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">总分</div><div class="result-score" id="preview-score">0 / 15</div></div>
+            <div style="text-align:right"><div style="font-size:11px;color:var(--muted);margin-bottom:6px">判定</div><div id="preview-badge" class="badge badge-X">待评估</div></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">合作追踪</div>
+          <div class="form-grid">
+            <div class="form-group"><label>漏斗阶段</label>
+              <select id="f-funnel"><option>建池</option><option>已发送DM</option><option>已回复</option><option>确认合作</option><option>已寄品</option><option>已发帖</option><option>已转化</option></select>
+            </div>
+            <div class="form-group"><label>合作形式</label>
+              <select id="f-collab"><option value="">待定</option><option>纯寄品</option><option>寄品+分佣</option><option>寄品+少量付费</option><option>付费合作</option></select>
+            </div>
+            <div class="form-group full"><label>备注</label><textarea id="f-notes" placeholder="其他信息..."></textarea></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;padding-bottom:40px">
+          <button class="btn btn-primary" id="save-btn" onclick="saveInfluencer()">保存到飞书</button>
+          <button class="btn" onclick="resetForm()">清空</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="detail-name">达人详情</div><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer"><button class="btn btn-danger" onclick="deleteInfluencer()">删除</button><button class="btn" onclick="closeModal()">关闭</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = '/api/feishu';
+  const VETO_LABELS = ['地区不符','账号停更','内容不垂直','假粉严重','竞品独家'];
+  let allData = [], currentFilter = 'all', currentDetailId = null;
+  let formScores = {s1:0,s2:0,s3:0,s4:0,s5:0,s6:0};
+
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 2500);
+  }
+
+  function gradeInfo(total, veto) {
+    if (veto) return {grade:'X',label:'一票否决',cls:'badge-X'};
+    if (total >= 13) return {grade:'A',label:'A级',cls:'badge-A'};
+    if (total >= 10) return {grade:'B',label:'B级',cls:'badge-B'};
+    if (total >= 7) return {grade:'C',label:'C级',cls:'badge-C'};
+    return {grade:'X',label:'不纳入',cls:'badge-X'};
+  }
+
+  async function loadData() {
+    document.getElementById('sync-status').textContent = '同步中...';
+    try {
+      const res = await fetch(`${API}?action=list`);
+      const json = await res.json();
+      allData = (json.records || []).map(r => {
+        const f = r.fields;
+        const s = {s1:f['场景匹配']||0,s2:f['内容类型']||0,s3:f['组队信号']||0,s4:f['商业变现']||0,s5:f['体量匹配']||0,s6:f['眼镜出镜']||0};
+        const total = s.s1+s.s2+s.s3+s.s4+s.s5+s.s6;
+        const gi = gradeInfo(total, f['否决原因']);
+        return {
+          id: r.record_id,
+          name: f['达人名称']||'',
+          ins: f['INS链接']||'',
+          strava: f['Strava链接']||'',
+          city: f['城市']||'',
+          followers: f['粉丝量']||'',
+          tier: f['层级']||'',
+          source: f['搜寻来源']||'',
+          sport: f['运动场景']||'',
+          network: f['关联达人']||'',
+          veto: f['否决原因']||null,
+          scores: s, total,
+          grade: gi.grade, gradeLabel: gi.label, gradeCls: gi.cls,
+          funnel: f['漏斗阶段']||'建池',
+          collab: f['合作形式']||'',
+          notes: f['备注']||'',
+          createdAt: f['录入时间']||''
+        };
+      });
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('main-table').style.display = 'table';
+      renderTable(); updateSidebarStats();
+      document.getElementById('sync-status').textContent = '已同步';
+      setTimeout(() => document.getElementById('sync-status').textContent = '', 2000);
+    } catch(e) {
+      document.getElementById('sync-status').textContent = '同步失败';
+      showToast('连接飞书失败：' + e.message, 'error');
+    }
+  }
+
+  async function saveInfluencer() {
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { showToast('请填写达人名称', 'error'); return; }
+    const btn = document.getElementById('save-btn');
+    btn.textContent = '保存中...'; btn.disabled = true;
+    const vetoHit = ['nv1','nv2','nv3','nv4','nv5'].map((id,i) => document.getElementById(id).checked ? VETO_LABELS[i] : null).find(v=>v);
+    const total = formScores.s1+formScores.s2+formScores.s3+formScores.s4+formScores.s5+formScores.s6;
+    const gi = gradeInfo(total, vetoHit);
+    const fields = {
+      '达人名称': name,
+      '场景匹配': formScores.s1, '内容类型': formScores.s2, '组队信号': formScores.s3,
+      '商业变现': formScores.s4, '体量匹配': formScores.s5, '眼镜出镜': formScores.s6,
+      '总分': total, '判定级别': gi.label,
+      '漏斗阶段': document.getElementById('f-funnel').value,
+      '录入时间': new Date().toLocaleDateString('zh-CN')
+    };
+    const optionals = {
+      'INS链接': 'f-ins', 'Strava链接': 'f-strava', '城市': 'f-city',
+      '层级': 'f-tier', '搜寻来源': 'f-source', '运动场景': 'f-sport',
+      '关联达人': 'f-network', '合作形式': 'f-collab', '备注': 'f-notes'
+    };
+    Object.entries(optionals).forEach(([k,id]) => { const v = document.getElementById(id).value.trim(); if (v) fields[k] = v; });
+    if (vetoHit) fields['否决原因'] = vetoHit;
+    const fol = parseInt(document.getElementById('f-followers').value);
+    if (fol) fields['粉丝量'] = fol;
+    try {
+      const res = await fetch(`${API}?action=create`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({fields}) });
+      if (!res.ok) throw new Error('保存失败');
+      showToast('已保存到飞书');
+      resetForm(); await loadData(); switchView('pool');
+    } catch(e) { showToast('保存失败：' + e.message, 'error'); }
+    finally { btn.textContent = '保存到飞书'; btn.disabled = false; }
+  }
+
+  async function updateFunnel(id, val) {
+    try {
+      await fetch(`${API}?action=update&recordId=${id}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({fields:{'漏斗阶段':val}}) });
+      const idx = allData.findIndex(x=>x.id===id);
+      if (idx>-1) allData[idx].funnel = val;
+      renderTable(); updateSidebarStats(); showToast('漏斗阶段已更新');
+    } catch(e) { showToast('更新失败', 'error'); }
+  }
+
+  async function deleteInfluencer() {
+    if (!confirm('确认删除？')) return;
+    try {
+      await fetch(`${API}?action=delete&recordId=${currentDetailId}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({}) });
+      allData = allData.filter(x=>x.id!==currentDetailId);
+      closeModal(); renderTable(); updateSidebarStats(); showToast('已删除');
+    } catch(e) { showToast('删除失败', 'error'); }
+  }
+
+  function renderTable() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const rows = allData.filter(d => (currentFilter==='all'||d.grade===currentFilter) && (!q||d.name.toLowerCase().includes(q)));
+    const tbody = document.getElementById('table-body');
+    document.getElementById('empty-state').style.display = rows.length ? 'none' : 'block';
+    tbody.innerHTML = rows.map(d => `
+      <tr onclick="openDetail('${d.id}')">
+        <td style="font-weight:500">${d.name}</td>
+        <td style="color:var(--muted)">${d.city||'—'}</td>
+        <td style="color:var(--muted);font-size:12px">${d.tier||'—'}</td>
+        <td><span class="badge ${d.gradeCls}">${d.gradeLabel}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-weight:500">${d.veto?'—':d.total+'/15'}</td>
+        <td style="color:var(--muted);font-size:12px">${d.sport||'—'}</td>
+        <td><span class="funnel-badge">${d.funnel}</span></td>
+        <td style="color:var(--muted);font-size:12px">${d.source||'—'}</td>
+      </tr>`).join('');
+    document.getElementById('pool-count').textContent = rows.length + ' 个达人' + (currentFilter!=='all'?' (已筛选)':'');
+  }
+
+  function updateSidebarStats() {
+    const A = allData.filter(d=>d.grade==='A').length;
+    const B = allData.filter(d=>d.grade==='B').length;
+    const active = allData.filter(d=>['确认合作','已寄品','已发帖','已转化'].includes(d.funnel)).length;
+    document.getElementById('sidebar-stats').innerHTML = `
+      <div class="stat-row"><span class="stat-label">总达人数</span><span class="stat-val">${allData.length}</span></div>
+      <div class="stat-row"><span class="stat-label">A级</span><span class="stat-val" style="color:var(--green)">${A}</span></div>
+      <div class="stat-row"><span class="stat-label">B级</span><span class="stat-val" style="color:var(--blue)">${B}</span></div>
+      <div class="stat-row"><span class="stat-label">合作中</span><span class="stat-val" style="color:var(--accent)">${active}</span></div>`;
+  }
+
+  function openDetail(id) {
+    currentDetailId = id;
+    const d = allData.find(x=>x.id===id);
+    if (!d) return;
+    document.getElementById('detail-name').textContent = d.name;
+    document.getElementById('detail-body').innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-card"><div class="detail-card-label">判定</div><div class="detail-card-val"><span class="badge ${d.gradeCls}">${d.gradeLabel}</span></div></div>
+        <div class="detail-card"><div class="detail-card-label">总分</div><div class="detail-card-val" style="font-family:'DM Mono',monospace">${d.veto?'一票否决':d.total+' / 15'}</div></div>
+        <div class="detail-card"><div class="detail-card-label">城市 / 层级</div><div class="detail-card-val">${d.city||'—'} · ${d.tier||'—'}</div></div>
+        <div class="detail-card"><div class="detail-card-label">粉丝量</div><div class="detail-card-val" style="font-family:'DM Mono',monospace">${d.followers?Number(d.followers).toLocaleString():'—'}</div></div>
+      </div>
+      ${d.ins?`<div style="margin-bottom:12px"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">INS链接</div><a href="${d.ins}" style="color:var(--blue);font-size:13px">${d.ins}</a></div>`:''}
+      ${d.veto?`<div style="background:var(--red-bg);border:1px solid rgba(248,113,113,0.3);border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--red)">否决原因：${d.veto}</div>`:''}
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px">评分明细</div>
+        <div class="score-breakdown">
+          <div class="score-item"><span class="score-item-label">场景匹配</span><span class="score-item-val">${d.scores.s1}/3</span></div>
+          <div class="score-item"><span class="score-item-label">内容类型</span><span class="score-item-val">${d.scores.s2}/3</span></div>
+          <div class="score-item"><span class="score-item-label">组队信号</span><span class="score-item-val">${d.scores.s3}/3</span></div>
+          <div class="score-item"><span class="score-item-label">商业变现</span><span class="score-item-val">${d.scores.s4}/3</span></div>
+          <div class="score-item"><span class="score-item-label">体量匹配</span><span class="score-item-val">${d.scores.s5}/2</span></div>
+          <div class="score-item"><span class="score-item-label">眼镜出镜</span><span class="score-item-val">${d.scores.s6}/1</span></div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">漏斗阶段</div>
+        <select class="funnel-select" onchange="updateFunnel('${d.id}',this.value)">
+          ${['建池','已发送DM','已回复','确认合作','已寄品','已发帖','已转化'].map(s=>`<option ${s===d.funnel?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      ${d.network?`<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">关联达人：<span style="color:var(--text)">${d.network}</span></div>`:''}
+      ${d.notes?`<div style="background:var(--surface2);border-radius:6px;padding:12px;font-size:13px;color:var(--muted)">${d.notes}</div>`:''}
+      <div style="margin-top:12px;font-size:11px;color:var(--faint)">录入时间：${d.createdAt}</div>`;
+    document.getElementById('detail-modal').classList.add('show');
+  }
+
+  function closeModal() { document.getElementById('detail-modal').classList.remove('show'); }
+
+  function setFilter(el, grade) {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('on'));
+    el.classList.add('on'); currentFilter = grade; renderTable();
+  }
+
+  function setScore(groupId, val, lblId, max) {
+    formScores['s'+groupId.replace('sg','')] = val;
+    document.querySelectorAll('#'+groupId+' .score-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.v)===val));
+    document.getElementById(lblId).textContent = val+'/'+max;
+    calcScore();
+  }
+
+  function calcScore() {
+    const total = formScores.s1+formScores.s2+formScores.s3+formScores.s4+formScores.s5+formScores.s6;
+    const vetoHit = ['nv1','nv2','nv3','nv4','nv5'].find(id => document.getElementById(id).checked);
+    const gi = gradeInfo(total, vetoHit);
+    document.getElementById('preview-score').textContent = total + ' / 15';
+    const badge = document.getElementById('preview-badge');
+    badge.className = 'badge ' + gi.cls; badge.textContent = gi.label;
+  }
+
+  function resetForm() {
+    ['f-name','f-ins','f-strava','f-followers','f-network','f-notes'].forEach(id => document.getElementById(id).value='');
+    ['f-city','f-tier','f-source','f-sport','f-collab'].forEach(id => document.getElementById(id).selectedIndex=0);
+    document.getElementById('f-funnel').selectedIndex=0;
+    ['nv1','nv2','nv3','nv4','nv5'].forEach(id => document.getElementById(id).checked=false);
+    formScores = {s1:0,s2:0,s3:0,s4:0,s5:0,s6:0};
+    ['sg1','sg2','sg3','sg4','sg5','sg6'].forEach(gid => document.querySelectorAll('#'+gid+' .score-btn').forEach((b,i) => b.classList.toggle('active', i===0)));
+    ['lbl-s1','lbl-s2','lbl-s3','lbl-s4'].forEach(id => document.getElementById(id).textContent='0/3');
+    document.getElementById('lbl-s5').textContent='0/2'; document.getElementById('lbl-s6').textContent='0/1';
+    calcScore();
+  }
+
+  function switchView(view) {
+    document.getElementById('view-pool').style.display = view==='pool'?'flex':'none';
+    document.getElementById('view-scoring').style.display = view==='scoring'?'flex':'none';
+    document.querySelectorAll('.nav-item').forEach((el,i) => el.classList.toggle('active', (i===0&&view==='pool')||(i===1&&view==='scoring')));
+  }
+
+  document.getElementById('detail-modal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+  loadData();
+</script>
+</body>
+</html>
