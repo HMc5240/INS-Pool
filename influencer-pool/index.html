@@ -157,7 +157,7 @@
       <div class="table-wrap">
         <div id="loading-state" class="loading-state">正在从飞书加载数据...</div>
         <table id="main-table" style="display:none">
-          <thead><tr><th>达人名称</th><th>城市</th><th>层级</th><th>判定</th><th>总分</th><th>场景</th><th>漏斗阶段</th><th>来源</th></tr></thead>
+          <thead><tr><th>达人名称</th><th>城市</th><th>层级</th><th>判定</th><th>总分</th><th>场景</th><th>漏斗阶段</th><th>最后触达</th><th>来源</th></tr></thead>
           <tbody id="table-body"></tbody>
         </table>
         <div id="empty-state" class="empty-state" style="display:none">
@@ -301,7 +301,8 @@
           funnel: f['漏斗阶段']||'建池',
           collab: f['合作形式']||'',
           notes: f['备注']||'',
-          createdAt: f['录入时间']||''
+          createdAt: f['录入时间']||'',
+          lastOutreach: f['最后触达时间']||''
         };
       });
       document.getElementById('loading-state').style.display = 'none';
@@ -381,6 +382,7 @@
         <td style="font-family:'DM Mono',monospace;font-weight:500">${d.veto?'—':d.total+'/15'}</td>
         <td style="color:var(--muted);font-size:12px">${d.sport||'—'}</td>
         <td><span class="funnel-badge">${d.funnel}</span></td>
+        <td style="color:var(--muted);font-size:12px">${d.lastOutreach||'—'}</td>
         <td style="color:var(--muted);font-size:12px">${d.source||'—'}</td>
       </tr>`).join('');
     document.getElementById('pool-count').textContent = rows.length + ' 个达人' + (currentFilter!=='all'?' (已筛选)':'');
@@ -430,6 +432,7 @@
       </div>
       ${d.network?`<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">关联达人：<span style="color:var(--text)">${d.network}</span></div>`:''}
       ${d.notes?`<div style="background:var(--surface2);border-radius:6px;padding:12px;font-size:13px;color:var(--muted)">${d.notes}</div>`:''}
+      ${d.lastOutreach?`<div style="margin-top:12px;font-size:13px;color:var(--muted)">最后触达时间：<span style="color:var(--text)">${d.lastOutreach}</span></div>`:''}
       <div style="margin-top:12px;font-size:11px;color:var(--faint)">录入时间：${d.createdAt}</div>`;
     document.getElementById('detail-modal').classList.add('show');
   }
